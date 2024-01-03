@@ -1,16 +1,21 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, colorchooser
 from PIL import Image, ImageDraw, ImageFont
 import os
-
 
 def add_text_to_images():
     input_folder = input_folder_path.get()
     output_folder = output_folder_path.get()
     text_to_write = text_entry.get()
+    font_path = 'Font/Roboto-Black.ttf'  # Default font path
+    font_size = font_size_scale.get()
 
-    if not (os.path.isdir(input_folder) and os.path.isdir(output_folder)):
-        status_label.config(text="Invalid folders!")
+    # Get selected color in hex and convert it to RGB
+    selected_color_hex = color_hex.get()
+    selected_color_rgb = tuple(int(selected_color_hex[i:i+2], 16) for i in (0, 2, 4))
+
+    if not (os.path.isdir(input_folder) and os.path.isdir(output_folder) and os.path.isfile(font_path)):
+        status_label.config(text="Invalid folders or font path!")
         return
 
     for filename in os.listdir(input_folder):
@@ -18,9 +23,8 @@ def add_text_to_images():
             img_path = os.path.join(input_folder, filename)
             img = Image.open(img_path)
 
-            # Define the font and size for the text
-            font_size = 30
-            font = ImageFont.load_default()
+            # Define the font for the text
+            font = ImageFont.truetype(font_path, font_size)
 
             # Create a drawing context
             draw = ImageDraw.Draw(img)
@@ -28,11 +32,8 @@ def add_text_to_images():
             # Define the position where the text will be placed (top-left corner)
             text_position = (20, 20)  # Adjust the coordinates as needed
 
-            # Define the color for the text (black in this case)
-            text_color = (255, 255, 255)  # Black color in RGB
-
             # Draw the text on the image
-            draw.text(text_position, text_to_write, fill=text_color, font=font)
+            draw.text(text_position, text_to_write, fill=selected_color_rgb, font=font)
 
             # Save the image with the added text
             output_path = os.path.join(output_folder, f"modified_{filename}")
@@ -40,16 +41,17 @@ def add_text_to_images():
 
     status_label.config(text="Images with text added saved!")
 
-
 def select_input_folder():
     folder_selected = filedialog.askdirectory()
     input_folder_path.set(folder_selected)
-
 
 def select_output_folder():
     folder_selected = filedialog.askdirectory()
     output_folder_path.set(folder_selected)
 
+def choose_text_color():
+    color_code = colorchooser.askcolor(title="Choose Text Color")[1]
+    color_hex.set(color_code[1:])  # Set color in hex format without the #
 
 # Create the GUI window
 root = tk.Tk()
@@ -57,6 +59,7 @@ root.title("Add Text to Images")
 
 input_folder_path = tk.StringVar()
 output_folder_path = tk.StringVar()
+color_hex = tk.StringVar(value="000000")  # Default color: Black
 
 # Input Folder
 tk.Label(root, text="Select Input Folder:").pack()
@@ -80,6 +83,21 @@ output_frame.pack()
 tk.Label(root, text="Enter Text to Write:").pack()
 text_entry = tk.Entry(root)
 text_entry.pack()
+
+# Text Color
+tk.Label(root, text="Select Text Color:").pack()
+color_frame = tk.Frame(root)
+color_entry = tk.Entry(color_frame, textvariable=color_hex)
+color_entry.pack(side=tk.LEFT)
+color_button = tk.Button(color_frame, text="Choose Color", command=choose_text_color)
+color_button.pack(side=tk.RIGHT)
+color_frame.pack()
+
+# Font Size
+tk.Label(root, text="Select Font Size:").pack()
+font_size_scale = tk.Scale(root, from_=10, to=100, orient=tk.HORIZONTAL)
+font_size_scale.set(30)  # Default font size
+font_size_scale.pack()
 
 # Add Text Button
 add_text_button = tk.Button(root, text="Add Text to Images", command=add_text_to_images)
